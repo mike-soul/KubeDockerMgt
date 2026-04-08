@@ -159,18 +159,16 @@ Write-Step "Installing to $installDir ..."
 
 if (-not (Test-Path $installDir)) { New-Item -ItemType Directory -Path $installDir | Out-Null }
 
-# Copy app files (skip the venv folder if re-running)
-$excludes = @("venv", ".git", "__pycache__", "*.pyc")
-Get-ChildItem $sourceDir | Where-Object {
-    $name = $_.Name
-    -not ($excludes | Where-Object { $name -like $_ })
-} | ForEach-Object {
+# Remove existing app files (but preserve venv and wheels) then copy fresh.
+# This avoids the PowerShell Copy-Item quirk where copying a directory into an
+# existing destination creates a nested duplicate (e.g. app/app/).
+$keepDirs = @("venv", "wheels", "bin")
+Get-ChildItem $installDir | Where-Object { $keepDirs -notcontains $_.Name } |
+    Remove-Item -Recurse -Force
+
+Get-ChildItem $sourceDir | Where-Object { $_.Name -ne ".git" } | ForEach-Object {
     Copy-Item $_.FullName (Join-Path $installDir $_.Name) -Recurse -Force
 }
-
-# Wipe all __pycache__ folders so Python recompiles from the new source
-Get-ChildItem $installDir -Filter "__pycache__" -Recurse -Directory -ErrorAction SilentlyContinue |
-    Remove-Item -Recurse -Force
 Write-OK "Files copied."
 
 # ---------------------------------------------------------------------------
