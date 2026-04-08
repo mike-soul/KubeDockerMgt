@@ -22,7 +22,10 @@ param(
     [string]$SourcePath = $PSScriptRoot,
 
     # Override the GitHub zip URL (tag/branch).
-    [string]$GitHubZipUrl = "https://github.com/mike-soul/KubeDockerMgt/archive/refs/heads/main.zip"   # e.g. "https://github.com/YOU/kubedock/archive/refs/heads/main.zip"
+    [string]$GitHubZipUrl = "https://github.com/mike-soul/KubeDockerMgt/archive/refs/heads/main.zip",
+
+    # Wipe the venv before installing — use this to fix a broken install.
+    [switch]$Reset
 )
 
 Set-StrictMode -Version Latest
@@ -114,6 +117,20 @@ if (-not $pythonCmd) {
         }
     } else {
         Write-OK "Python installed successfully."
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Reset — wipe venv if requested
+# ---------------------------------------------------------------------------
+if ($Reset) {
+    $venvToDelete = Join-Path $env:LOCALAPPDATA "KubeDock\venv"
+    if (Test-Path $venvToDelete) {
+        Write-Step "Resetting venv..."
+        Remove-Item $venvToDelete -Recurse -Force
+        Write-OK "venv removed. Will be recreated fresh."
+    } else {
+        Write-Warn "No venv found to remove, continuing."
     }
 }
 
