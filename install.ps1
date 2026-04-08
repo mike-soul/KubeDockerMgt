@@ -166,6 +166,10 @@ Get-ChildItem $sourceDir | Where-Object {
 } | ForEach-Object {
     Copy-Item $_.FullName (Join-Path $installDir $_.Name) -Recurse -Force
 }
+
+# Wipe all __pycache__ folders so Python recompiles from the new source
+Get-ChildItem $installDir -Filter "__pycache__" -Recurse -Directory -ErrorAction SilentlyContinue |
+    Remove-Item -Recurse -Force
 Write-OK "Files copied."
 
 # ---------------------------------------------------------------------------
