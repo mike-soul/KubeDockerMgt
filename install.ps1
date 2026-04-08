@@ -131,9 +131,10 @@ if ($runningFromUrl -or $GitHubZipUrl) {
         Write-Fail "No GitHubZipUrl provided and script was run via irm|iex. Please set `$GitHubZipUrl or run the script with -GitHubZipUrl."
     }
 
+    $bustUrl = $GitHubZipUrl + "?t=$(Get-Random)"
     Write-OK "Downloading from: $GitHubZipUrl"
     $zipPath = Join-Path $env:TEMP "kubedock.zip"
-    Invoke-WebRequest -Uri $GitHubZipUrl -OutFile $zipPath -UseBasicParsing
+    Invoke-WebRequest -Uri $bustUrl -OutFile $zipPath -UseBasicParsing -Headers @{'Cache-Control'='no-cache'; 'Pragma'='no-cache'}
 
     if (Test-Path $appStagingDir) { Remove-Item $appStagingDir -Recurse -Force }
     Expand-Archive -Path $zipPath -DestinationPath $appStagingDir -Force
