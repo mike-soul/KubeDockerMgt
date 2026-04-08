@@ -132,9 +132,26 @@ if ($runningFromUrl -or $GitHubZipUrl) {
     }
 
     $bustUrl = $GitHubZipUrl + "?t=$(Get-Random)"
-    Write-OK "Downloading from: $GitHubZipUrl"
     $zipPath = Join-Path $env:TEMP "kubedock.zip"
-    Invoke-WebRequest -Uri $bustUrl -OutFile $zipPath -UseBasicParsing -Headers @{'Cache-Control'='no-cache'; 'Pragma'='no-cache'}
+
+    Write-Host "    Downloading KubeDock..." -NoNewline -ForegroundColor Cyan
+    $job = Start-Job -ScriptBlock {
+        param($url, $path)
+        $ProgressPreference = 'SilentlyContinue'
+        Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing -Headers @{'Cache-Control'='no-cache'; 'Pragma'='no-cache'}
+    } -ArgumentList $bustUrl, $zipPath
+
+    $spinner = @('|','/','-','\')
+    $i = 0
+    while ($job.State -eq 'Running') {
+        Write-Host "`b$($spinner[$i % 4])" -NoNewline
+        Start-Sleep -Milliseconds 100
+        $i++
+    }
+    Receive-Job $job -ErrorAction Stop | Out-Null
+    Remove-Job $job
+    Write-Host "`b " -NoNewline
+    Write-OK "Download complete."
 
     if (Test-Path $appStagingDir) { Remove-Item $appStagingDir -Recurse -Force }
     Expand-Archive -Path $zipPath -DestinationPath $appStagingDir -Force
