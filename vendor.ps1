@@ -28,7 +28,7 @@ if (Test-Path $wheelsDir) {
 New-Item -ItemType Directory -Path $wheelsDir | Out-Null
 
 $reqFile = Join-Path $PSScriptRoot "requirements.txt"
-py -m pip download -r $reqFile -d $wheelsDir --platform win_amd64 --python-version 3.12 --implementation cp --abi cp312 --only-binary=:all:
+py -m pip download -r $reqFile -d $wheelsDir
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] pip download failed." -ForegroundColor Red
