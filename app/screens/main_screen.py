@@ -174,6 +174,7 @@ class MainScreen(Screen):
     def on_mount(self) -> None:
         self._update_context_bar()
         self._load_tab(self._active_tab)
+        self.query_one(DataTable).focus()
 
     # ------------------------------------------------------------------
     # Tab switching
@@ -184,6 +185,7 @@ class MainScreen(Screen):
         if tab_def:
             self._active_tab = tab_def
             self._load_tab(tab_def)
+            self.query_one(DataTable).focus()
 
     def _tab_by_id(self, tab_id: str) -> TabDef | None:
         for t in self._tabs:

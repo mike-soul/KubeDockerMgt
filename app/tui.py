@@ -39,7 +39,7 @@ class KubeDockTUI(App):
         padding: 0 2;
     }
     Tab.-active {
-        color: $primary;
+        color: $text;
         text-style: bold;
         border-bottom: tall $primary;
     }

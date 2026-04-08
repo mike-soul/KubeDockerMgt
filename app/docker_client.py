@@ -105,7 +105,10 @@ class DockerClient:
         if not self.available:
             return []
         try:
-            containers = self._client.containers.list(all=all)
+            containers = [
+                c for c in self._client.containers.list(all=all)
+                if not c.name.startswith("k8s_")
+            ]
             return [
                 {
                     "id": c.short_id,

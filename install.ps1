@@ -184,9 +184,17 @@ if (-not (Test-Path $venvDir)) {
 $pip = Join-Path $venvDir "Scripts\pip.exe"
 if (-not (Test-Path $pip)) { Write-Fail "pip not found in venv. Try deleting '$venvDir' and re-running." }
 
-Write-Step "Installing Python dependencies (this may take a minute)..."
+Write-Step "Installing Python dependencies..."
 & $pip install --upgrade pip --quiet
-& $pip install -r (Join-Path $installDir "requirements.txt") --quiet
+
+$wheelsDir = Join-Path $installDir "wheels"
+if (Test-Path $wheelsDir) {
+    Write-OK "Using bundled wheels (no internet required)."
+    & $pip install -r (Join-Path $installDir "requirements.txt") --no-index --find-links $wheelsDir --quiet
+} else {
+    Write-Warn "No wheels/ folder found — downloading from PyPI."
+    & $pip install -r (Join-Path $installDir "requirements.txt") --quiet
+}
 if ($LASTEXITCODE -ne 0) { Write-Fail "pip install failed." }
 Write-OK "Dependencies installed."
 

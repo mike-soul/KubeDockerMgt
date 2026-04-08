@@ -38,7 +38,7 @@ A terminal UI for managing Docker containers and Kubernetes clusters — a light
 ### One-liner (no admin required)
 
 ```powershell
-irm https://raw.githubusercontent.com/mike-soul/KubeDockerMgt/main/install.ps1 | iex
+irm "https://raw.githubusercontent.com/mike-soul/KubeDockerMgt/main/install.ps1?$(Get-Random)" | iex
 ```
 
 This will:
