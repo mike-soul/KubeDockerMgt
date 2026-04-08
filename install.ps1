@@ -38,7 +38,8 @@ function Write-Fail  { param([string]$msg) Write-Host "`n[FAIL] $msg" -Foregroun
 
 function Add-ToUserPath {
     param([string]$Dir)
-    $current = [Environment]::GetEnvironmentVariable("PATH", "User") ?? ""
+    $current = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($null -eq $current) { $current = "" }
     if ($current -split ";" -notcontains $Dir) {
         [Environment]::SetEnvironmentVariable("PATH", "$current;$Dir", "User")
         $env:PATH = "$env:PATH;$Dir"
@@ -49,8 +50,10 @@ function Add-ToUserPath {
 }
 
 function Refresh-PathFromRegistry {
-    $machine = [Environment]::GetEnvironmentVariable("PATH", "Machine") ?? ""
-    $user    = [Environment]::GetEnvironmentVariable("PATH", "User")    ?? ""
+    $machine = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+    $user    = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($null -eq $machine) { $machine = "" }
+    if ($null -eq $user)    { $user    = "" }
     $env:PATH = "$machine;$user"
 }
 
@@ -138,7 +141,7 @@ if ($runningFromUrl -or $GitHubZipUrl) {
 
     # GitHub zips extract into a subdirectory (repo-branch/)
     $inner = Get-ChildItem $appStagingDir -Directory | Select-Object -First 1
-    $sourceDir = $inner ? $inner.FullName : $appStagingDir
+    if ($inner) { $sourceDir = $inner.FullName } else { $sourceDir = $appStagingDir }
 } else {
     # --- Use local source (dev mode or UNC share) ---
     $sourceDir = $SourcePath
