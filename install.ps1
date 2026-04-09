@@ -71,49 +71,62 @@ $runningFromUrl = [string]::IsNullOrEmpty($PSScriptRoot)
 Write-Step "Checking for Python..."
 
 $pythonCmd = $null
-foreach ($candidate in @("python", "python3", "py")) {
-    try {
-        $ver = & $candidate --version 2>&1
-        if ($ver -match "Python 3\.") {
-            $pythonCmd = $candidate
-            Write-OK "Found: $ver  ($candidate)"
-            break
-        }
-    } catch { }
+
+# Check for Python 3.12 specifically via the py launcher first
+try {
+    $ver = & py -3.12 --version 2>&1
+    if ($ver -match "Python 3\.12") {
+        $pythonCmd = "py -3.12"
+        Write-OK "Found: $ver"
+    }
+} catch { }
+
+# Fall back to checking python/python3 on PATH
+if (-not $pythonCmd) {
+    foreach ($candidate in @("python", "python3")) {
+        try {
+            $ver = & $candidate --version 2>&1
+            if ($ver -match "Python 3\.12") {
+                $pythonCmd = $candidate
+                Write-OK "Found: $ver  ($candidate)"
+                break
+            } elseif ($ver -match "Python 3\.") {
+                Write-Warn "Found $ver but KubeDock requires Python 3.12 — will install 3.12."
+            }
+        } catch { }
+    }
 }
 
 if (-not $pythonCmd) {
-    Write-Step "Python not found — installing via winget (user scope, no admin)..."
+    Write-Step "Python 3.12 not found — installing via winget (user scope, no admin)..."
 
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Fail "winget not found. Install 'App Installer' from the Microsoft Store or install Python manually from https://python.org and re-run."
+        Write-Fail "winget not found. Install 'App Installer' from the Microsoft Store or install Python 3.12 manually from https://python.org and re-run."
     }
 
     winget install --id Python.Python.3.12 --scope user --silent --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -ne 0) {
-        Write-Fail "winget install failed (exit $LASTEXITCODE). Try installing Python manually from https://python.org (choose 'Install for current user')."
+        Write-Fail "winget install failed (exit $LASTEXITCODE). Try installing Python 3.12 manually from https://python.org (choose 'Install for current user')."
     }
 
     Refresh-PathFromRegistry
 
-    foreach ($candidate in @("python", "python3", "py")) {
-        try {
-            $ver = & $candidate --version 2>&1
-            if ($ver -match "Python 3\.") { $pythonCmd = $candidate; break }
-        } catch { }
-    }
+    try {
+        $ver = & py -3.12 --version 2>&1
+        if ($ver -match "Python 3\.12") { $pythonCmd = "py -3.12" }
+    } catch { }
 
     if (-not $pythonCmd) {
         # winget may not have updated the current session PATH yet — find it manually
-        $pyBase = Join-Path $env:LOCALAPPDATA "Programs\Python"
-        $found  = Get-ChildItem $pyBase -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
-                  Sort-Object FullName -Descending | Select-Object -First 1
+        $pyBase = Join-Path $env:LOCALAPPDATA "Programs\Python\Python312"
+        $found  = Get-ChildItem $pyBase -Filter "python.exe" -ErrorAction SilentlyContinue |
+                  Select-Object -First 1
         if ($found) {
             $pythonCmd = $found.FullName
             Add-ToUserPath (Split-Path $found.FullName)
             Write-OK "Using: $pythonCmd"
         } else {
-            Write-Fail "Python installed but could not locate python.exe. Please open a new terminal and re-run."
+            Write-Fail "Python 3.12 installed but could not locate python.exe. Please open a new terminal and re-run."
         }
     } else {
         Write-OK "Python installed successfully."
@@ -212,8 +225,9 @@ Write-Step "Setting up Python virtual environment..."
 
 $venvDir = Join-Path $installDir "venv"
 if (-not (Test-Path $venvDir)) {
-    & $pythonCmd -3.12 -m venv $venvDir 2>$null
-    if ($LASTEXITCODE -ne 0) { & $pythonCmd -m venv $venvDir }
+    $pythonArgs = ($pythonCmd -split " ") + @("-m", "venv", $venvDir)
+    & $pythonArgs[0] $pythonArgs[1..($pythonArgs.Length-1)]
+    if ($LASTEXITCODE -ne 0) { Write-Fail "Failed to create venv with Python 3.12." }
     Write-OK "venv created."
 } else {
     Write-OK "venv already exists — updating."
