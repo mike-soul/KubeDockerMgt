@@ -133,6 +133,7 @@ KUBE_TABS: list[TabDef] = [
 class MainScreen(Screen):
 
     BINDINGS = [
+        Binding("tab", "next_tab", "Next tab", show=True),
         Binding("r", "refresh", "Refresh"),
         Binding("enter", "open_actions", "Actions"),
         Binding("d", "switch_docker_context", "Docker ctx"),
@@ -146,6 +147,7 @@ class MainScreen(Screen):
         self.kube = kube
         self._tabs: list[TabDef] = self._build_tab_list()
         self._active_tab: TabDef = self._tabs[0]
+        self._tab_index: int = 0
         self._rows: list[dict] = []
 
     # ------------------------------------------------------------------
@@ -166,7 +168,9 @@ class MainScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Static("", id="context-bar")
-        yield Tabs(*[Tab(t.label, id=t.id) for t in self._tabs])
+        tabs = Tabs(*[Tab(t.label, id=t.id) for t in self._tabs])
+        tabs.can_focus = False
+        yield tabs
         yield DataTable(id="main-table", zebra_stripes=True, cursor_type="row")
         yield Static("", id="status-bar")
         yield Footer()
@@ -174,21 +178,18 @@ class MainScreen(Screen):
     def on_mount(self) -> None:
         self._update_context_bar()
         self._load_tab(self._active_tab)
-        self.call_after_refresh(self._focus_table)
-
-    def _focus_table(self) -> None:
         self.query_one(DataTable).focus()
 
     # ------------------------------------------------------------------
     # Tab switching
     # ------------------------------------------------------------------
 
-    def on_tabs_tab_activated(self, event: Tabs.TabActivated) -> None:
-        tab_def = self._tab_by_id(event.tab.id)
-        if tab_def:
-            self._active_tab = tab_def
-            self._load_tab(tab_def)
-            self.call_after_refresh(self._focus_table)
+    def action_next_tab(self) -> None:
+        self._tab_index = (self._tab_index + 1) % len(self._tabs)
+        self._active_tab = self._tabs[self._tab_index]
+        self.query_one(Tabs).active = self._active_tab.id
+        self._load_tab(self._active_tab)
+        self.query_one(DataTable).focus()
 
     def _tab_by_id(self, tab_id: str) -> TabDef | None:
         for t in self._tabs:

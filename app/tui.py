@@ -8,10 +8,13 @@ from app.docker_client import DockerClient
 from app.kube_client import KubeClient
 
 
+VERSION = "1.0.0"
+
+
 class KubeDockTUI(App):
     """KubeDock — a Docker & Kubernetes terminal manager."""
 
-    TITLE = "KubeDock"
+    TITLE = f"KubeDock v{VERSION}"
     SUB_TITLE = "Docker & Kubernetes Terminal Manager"
 
     CSS = """
@@ -39,9 +42,7 @@ class KubeDockTUI(App):
         padding: 0 2;
         color: $text-muted;
     }
-    Tab.-active,
-    Tabs:blur Tab.-active,
-    Tabs:focus Tab.-active {
+    Tab.-active {
         color: $text;
         text-style: bold;
         background: $primary-darken-2;
@@ -82,6 +83,19 @@ class KubeDockTUI(App):
     Footer > .footer--key {
         background: $primary;
         color: $background;
+    }
+
+    /* ---- Splash screen ---- */
+    #splash {
+        align: center middle;
+        height: 1fr;
+    }
+    #splash > Static {
+        width: 44;
+        height: auto;
+        border: round $error;
+        padding: 1 2;
+        text-align: center;
     }
 
     """
