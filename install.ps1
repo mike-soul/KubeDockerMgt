@@ -212,7 +212,8 @@ Write-Step "Setting up Python virtual environment..."
 
 $venvDir = Join-Path $installDir "venv"
 if (-not (Test-Path $venvDir)) {
-    & $pythonCmd -m venv $venvDir
+    & $pythonCmd -3.12 -m venv $venvDir 2>$null
+    if ($LASTEXITCODE -ne 0) { & $pythonCmd -m venv $venvDir }
     Write-OK "venv created."
 } else {
     Write-OK "venv already exists — updating."

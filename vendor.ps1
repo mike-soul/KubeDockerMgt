@@ -28,7 +28,7 @@ if (Test-Path $wheelsDir) {
 New-Item -ItemType Directory -Path $wheelsDir | Out-Null
 
 $reqFile = Join-Path $PSScriptRoot "requirements.txt"
-py -m pip download -r $reqFile -d $wheelsDir
+py -3.12 -m pip download -r $reqFile -d $wheelsDir
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] pip download failed." -ForegroundColor Red
